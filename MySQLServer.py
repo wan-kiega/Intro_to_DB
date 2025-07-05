@@ -1,33 +1,48 @@
 import mysql.connector
-from mysql.connector import Error
+from mysql.connector import errorcode
 
-def create_database():
+def create_database(db_name: str, host: str, user: str, password: str) -> None:
+    conn = None
+    cursor = None
+
     try:
-        # Establishing connection to MySQL server (without specifying a database)
-        connection = mysql.connector.connect(
-            host='localhost',
-            user='Local instance MySQL80',  # Replace with your MySQL username
-            password='WanjiruKiega@001'   # Replace with your MySQL password
+        # Connect to MySQL server
+        conn = mysql.connector.connect(
+            host=host,
+            user=user,
+            password=password
         )
+        cursor = conn.cursor()
 
-        if connection.is_connected():
-            cursor = connection.cursor()
+        # Create database if it doesn't exist
+        cursor.execute(
+            f"CREATE DATABASE IF NOT EXISTS alx_book_store "
+            "DEFAULT CHARACTER SET utf8mb4"
+        )
+        print(f"Database `{db_name}` created successfully!")
 
-            # Create the database if it doesn't exist
-            cursor.execute("CREATE DATABASE IF NOT EXISTS alx_book_store")
-
-            print("Database 'alx_book_store' created successfully!")
-
-    except Error as e:
-        print(f"Error: {e}")
-
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Access denied: check username or password!")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Unknown database!")
+        else:
+            print(f"MySQL Error: {err}")
+    except Exception as exc:
+        print(f"Unexpected error: {exc}")
     finally:
-        # Close cursor and connection
-        if 'cursor' in locals() and cursor.is_connected():
+        if cursor is not None:
             cursor.close()
-        if 'connection' in locals() and connection.is_connected():
-            connection.close()
-            print("MySQL connection closed.")
+            print("Cursor closed.")
+        if conn is not None and conn.is_connected():
+            conn.close()
+            print("Connection closed.")
 
+# Entry point
 if __name__ == "__main__":
-    create_database()
+    create_database(
+        db_name="alx_book_store",
+        host="localhost",
+        user="root",
+        password="password"
+    )
